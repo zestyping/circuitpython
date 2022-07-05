@@ -90,3 +90,7 @@ TAGS
 
 # Uncrustify formatting
 *.uncrustify
+
+# venv
+activate
+venv/
