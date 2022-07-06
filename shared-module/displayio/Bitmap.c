@@ -143,11 +143,15 @@ void displayio_bitmap_write_pixel(displayio_bitmap_t *self, int16_t x, int16_t y
     }
 }
 
-void common_hal_displayio_bitmap_blit(displayio_bitmap_t *self, int16_t x, int16_t y, displayio_bitmap_t *source,
-    int16_t x1, int16_t y1, int16_t x2, int16_t y2, uint32_t skip_index, bool skip_index_none) {
+void common_hal_displayio_bitmap_blit(
+    displayio_bitmap_t *self, int16_t x, int16_t y, displayio_bitmap_t *source,
+    int16_t x1, int16_t y1, int16_t x2, int16_t y2,
+    uint32_t skip_index, bool skip_index_none,
+    uint32_t write_value, bool write_value_none
+) {
     // Copy region of "source" bitmap into "self" bitmap at location x,y in the "self"
-    // If skip_value is encountered in the source bitmap, it will not be copied.
-    // If skip_value is `None`, then all pixels are copied.
+    // If skip_index is encountered in the source bitmap, it will not be copied.
+    // If skip_index is `None`, then all pixels are copied.
     // This function assumes input checks were performed for pixel index entries.
 
     // Update the dirty area
@@ -188,7 +192,10 @@ void common_hal_displayio_bitmap_blit(displayio_bitmap_t *self, int16_t x, int16
 
                 if ((yd_index >= 0) && (yd_index < self->height)) {
                     uint32_t value = common_hal_displayio_bitmap_get_pixel(source, xs_index, ys_index);
-                    if ((skip_index_none) || (value != skip_index)) {   // write if skip_value_none is True
+                    if (value && !write_value_none) {
+                        value = write_value;  // let write_value override the value to write
+                    }
+                    if ((skip_index_none) || (value != skip_index)) {   // write if skip_index_none is True
                         displayio_bitmap_write_pixel(self, xd_index, yd_index, value);
                     }
                 }

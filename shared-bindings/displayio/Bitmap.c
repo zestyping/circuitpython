@@ -190,12 +190,14 @@ STATIC mp_obj_t bitmap_subscr(mp_obj_t self_in, mp_obj_t index_obj, mp_obj_t val
 //|         :param int y1: Minimum y-value for rectangular bounding box to be copied from the source bitmap
 //|         :param int x2: Maximum x-value (exclusive) for rectangular bounding box to be copied from the source bitmap
 //|         :param int y2: Maximum y-value (exclusive) for rectangular bounding box to be copied from the source bitmap
-//|         :param int skip_index: bitmap palette index in the source that will not be copied,
-//|                                set to None to copy all pixels"""
+//|         :param int skip_index: Bitmap palette index in the source that will not be copied;
+//|                                set to None to copy all pixels
+//|         :param int write_value: Value to write into target pixels for all non-zero source
+//|                                pixels; set to None to copy source values"""
 //|         ...
 //|
 STATIC mp_obj_t displayio_bitmap_obj_blit(size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args) {
-    enum {ARG_x, ARG_y, ARG_source, ARG_x1, ARG_y1, ARG_x2, ARG_y2, ARG_skip_index};
+    enum {ARG_x, ARG_y, ARG_source, ARG_x1, ARG_y1, ARG_x2, ARG_y2, ARG_skip_index, ARG_write_value};
     static const mp_arg_t allowed_args[] = {
         {MP_QSTR_x, MP_ARG_REQUIRED | MP_ARG_INT, {.u_obj = MP_OBJ_NULL} },
         {MP_QSTR_y, MP_ARG_REQUIRED | MP_ARG_INT, {.u_obj = MP_OBJ_NULL} },
@@ -205,6 +207,7 @@ STATIC mp_obj_t displayio_bitmap_obj_blit(size_t n_args, const mp_obj_t *pos_arg
         {MP_QSTR_x2, MP_ARG_KW_ONLY | MP_ARG_OBJ, {.u_obj = mp_const_none} }, // None convert to source->width
         {MP_QSTR_y2, MP_ARG_KW_ONLY | MP_ARG_OBJ, {.u_obj = mp_const_none} }, // None convert to source->height
         {MP_QSTR_skip_index, MP_ARG_OBJ | MP_ARG_KW_ONLY, {.u_obj = mp_const_none} },
+        {MP_QSTR_write_value, MP_ARG_OBJ | MP_ARG_KW_ONLY, {.u_obj = mp_const_none} },
     };
     mp_arg_val_t args[MP_ARRAY_SIZE(allowed_args)];
     mp_arg_parse_all(n_args - 1, pos_args + 1, kw_args, MP_ARRAY_SIZE(allowed_args), allowed_args, args);
@@ -263,7 +266,7 @@ STATIC mp_obj_t displayio_bitmap_obj_blit(size_t n_args, const mp_obj_t *pos_arg
     }
 
     uint32_t skip_index;
-    bool skip_index_none; // flag whether skip_value was None
+    bool skip_index_none; // flag whether skip_index was None
 
     if (args[ARG_skip_index].u_obj == mp_const_none) {
         skip_index = 0;
@@ -273,7 +276,18 @@ STATIC mp_obj_t displayio_bitmap_obj_blit(size_t n_args, const mp_obj_t *pos_arg
         skip_index_none = false;
     }
 
-    common_hal_displayio_bitmap_blit(self, x, y, source, x1, y1, x2, y2, skip_index, skip_index_none);
+    uint32_t write_value;
+    bool write_value_none; // flag whether write_value was None
+
+    if (args[ARG_write_value].u_obj == mp_const_none) {
+        write_value = 0;
+        write_value_none = true;
+    } else {
+        write_value = mp_obj_get_int(args[ARG_write_value].u_obj);
+        write_value_none = false;
+    }
+
+    common_hal_displayio_bitmap_blit(self, x, y, source, x1, y1, x2, y2, skip_index, skip_index_none, write_value, write_value_none);
 
     return mp_const_none;
 }
