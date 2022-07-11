@@ -32,7 +32,7 @@ CIRCUITPY_AUDIOCORE = 0
 CIRCUITPY_AUDIOIO = 0
 CIRCUITPY_AUDIOMIXER = 0
 CIRCUITPY_AUDIOMP3 = 0
-CIRCUITPY_BINASCII = 0
+# CIRCUITPY_BINASCII = 0  # used by Adafruit_CircuitPython_Hashlib
 # CIRCUITPY_BLEIO = 0  # used in main.c
 CIRCUITPY_COUNTIO = 0
 CIRCUITPY_FLOPPYIO = 0
@@ -52,7 +52,7 @@ CIRCUITPY_VECTORIO = 0
 
 # Add libraries we do want
 FROZEN_MPY_DIRS += $(TOP)/frozen/Adafruit_CircuitPython_Bitmap_Font
-FROZEN_MPY_DIRS += $(TOP)/frozen/Adafruit_CircuitPython_datetime
+# FROZEN_MPY_DIRS += $(TOP)/frozen/Adafruit_CircuitPython_datetime
 FROZEN_MPY_DIRS += $(TOP)/frozen/Adafruit_CircuitPython_Display_Text
 FROZEN_MPY_DIRS += $(TOP)/frozen/Adafruit_CircuitPython_DS3231
 FROZEN_MPY_DIRS += $(TOP)/frozen/Adafruit_CircuitPython_Hashlib
