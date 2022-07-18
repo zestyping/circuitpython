@@ -15,7 +15,7 @@ CIRCUITPY_ONEWIREIO = 0
 CIRCUITPY_PARALLELDISPLAY = 0
 CIRCUITPY_SDCARDIO = 0
 CIRCUITPY_SHARPDISPLAY = 0
-CIRCUITPY_TRACEBACK = 0
+# CIRCUITPY_TRACEBACK = 0
 CIRCUITPY_ZLIB=0
 
 # Include these Python libraries in firmware.
@@ -52,7 +52,7 @@ CIRCUITPY_VECTORIO = 0
 
 # Add libraries we do want
 FROZEN_MPY_DIRS += $(TOP)/frozen/Adafruit_CircuitPython_Bitmap_Font
-# FROZEN_MPY_DIRS += $(TOP)/frozen/Adafruit_CircuitPython_datetime
+FROZEN_MPY_DIRS += $(TOP)/frozen/Adafruit_CircuitPython_datetime
 FROZEN_MPY_DIRS += $(TOP)/frozen/Adafruit_CircuitPython_Display_Text
 FROZEN_MPY_DIRS += $(TOP)/frozen/Adafruit_CircuitPython_DS3231
 FROZEN_MPY_DIRS += $(TOP)/frozen/Adafruit_CircuitPython_Hashlib
