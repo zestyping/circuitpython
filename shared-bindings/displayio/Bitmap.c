@@ -272,7 +272,7 @@ STATIC mp_obj_t displayio_bitmap_obj_blit(size_t n_args, const mp_obj_t *pos_arg
 
     return mp_const_none;
 }
-MP_DEFINE_CONST_FUN_OBJ_KW(displayio_bitmap_blit_obj, 1, displayio_bitmap_obj_blit);
+MP_DEFINE_CONST_FUN_OBJ_KW(displayio_bitmap_blit_obj, 3, displayio_bitmap_obj_blit);
 
 //|     def freeblit(self, x: int, y: int, source_bitmap: Bitmap, *, x1: int, y1: int, x2: int, y2: int, skip_index: int, multiplier: int) -> None:
 //|         """Copies the rectangle from (x1, y1) to (x2, y2) in source_bitmap
@@ -364,22 +364,37 @@ STATIC mp_obj_t displayio_bitmap_obj_freeblit(size_t n_args, const mp_obj_t *pos
 }
 MP_DEFINE_CONST_FUN_OBJ_KW(displayio_bitmap_freeblit_obj, 1, displayio_bitmap_obj_freeblit);
 
-//|     def fill(self, value: int) -> None:
-//|         """Fills the bitmap with the supplied palette index value."""
-//|         ...
+//|     def fill(self, value: int, x1: int, y1: int, x2: int, y2: int) -> None:
+//|         """Fills a rectangle of the bitmap with a palette index value.
+//|         If no coordinates are specified, fills the entire bitmap."""
 //|
-STATIC mp_obj_t displayio_bitmap_obj_fill(mp_obj_t self_in, mp_obj_t value_obj) {
-    displayio_bitmap_t *self = MP_OBJ_TO_PTR(self_in);
+STATIC mp_obj_t displayio_bitmap_obj_fill(size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args) {
+    displayio_bitmap_t *self = MP_OBJ_TO_PTR(pos_args[0]);
+    enum { ARG_value, ARG_x1, ARG_y1, ARG_x2, ARG_y2 };
+    static const mp_arg_t allowed_args[] = {
+        { MP_QSTR_value, MP_ARG_INT, {.u_int = 0} },
+        { MP_QSTR_x1, MP_ARG_INT, {.u_int = 0} },
+        { MP_QSTR_y1, MP_ARG_INT, {.u_int = 0} },
+        { MP_QSTR_x2, MP_ARG_OBJ, {.u_obj = mp_const_none} },
+        { MP_QSTR_y2, MP_ARG_OBJ, {.u_obj = mp_const_none} },
+    };
+    mp_arg_val_t args[MP_ARRAY_SIZE(allowed_args)];
+    mp_arg_parse_all(n_args - 1, pos_args + 1, kw_args, MP_ARRAY_SIZE(allowed_args), allowed_args, args);
 
-    mp_uint_t value = (mp_uint_t)mp_obj_get_int(value_obj);
-    if ((value >> common_hal_displayio_bitmap_get_bits_per_value(self)) != 0) {
-        mp_raise_ValueError(translate("pixel value requires too many bits"));
-    }
-    common_hal_displayio_bitmap_fill(self, value);
+    mp_uint_t value = (mp_uint_t) args[ARG_value].u_int;
+    int16_t x1 = args[ARG_x1].u_int;
+    int16_t y1 = args[ARG_y1].u_int;
 
+    // Fill in default values for x2 and y2.
+    mp_obj_t x2_obj = args[ARG_x2].u_obj;
+    int16_t x2 = x2_obj == mp_const_none ? self->width : mp_obj_get_int(x2_obj);
+    mp_obj_t y2_obj = args[ARG_y2].u_obj;
+    int16_t y2 = y2_obj == mp_const_none ? self->height : mp_obj_get_int(y2_obj);
+
+    common_hal_displayio_bitmap_fill(self, value, x1, y1, x2, y2);
     return mp_const_none;
 }
-MP_DEFINE_CONST_FUN_OBJ_2(displayio_bitmap_fill_obj, displayio_bitmap_obj_fill);
+MP_DEFINE_CONST_FUN_OBJ_KW(displayio_bitmap_fill_obj, 1, displayio_bitmap_obj_fill);
 
 //|     def dirty(self, x1: int=0, y1: int=0, x2: int=-1, y2:int = -1) -> None:
 //|         """Inform displayio of bitmap updates done via the buffer

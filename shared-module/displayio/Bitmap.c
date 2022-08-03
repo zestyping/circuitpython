@@ -30,6 +30,9 @@
 
 #include "py/runtime.h"
 
+#define min(a, b) (((a) < (b)) ? (a) : (b))
+#define max(a, b) (((a) > (b)) ? (a) : (b))
+
 void common_hal_displayio_bitmap_construct(displayio_bitmap_t *self, uint32_t width,
     uint32_t height, uint32_t bits_per_value) {
     uint32_t row_width = width * bits_per_value;
@@ -224,18 +227,33 @@ void displayio_bitmap_finish_refresh(displayio_bitmap_t *self) {
     self->dirty_area.x2 = 0;
 }
 
-void common_hal_displayio_bitmap_fill(displayio_bitmap_t *self, uint32_t value) {
-    displayio_area_t a = {0, 0, self->width, self->height, NULL};
+void common_hal_displayio_bitmap_fill(
+    displayio_bitmap_t *self, uint32_t value,
+    int16_t x1, int16_t y1, int16_t x2, int16_t y2) {
+    x1 = min(max(x1, 0), self->width);
+    y1 = min(max(y1, 0), self->height);
+    x2 = min(max(x2, x1), self->width);
+    y2 = min(max(y2, y1), self->height);
+
+    displayio_area_t a = {x1, y1, x2, y2, NULL};
     displayio_bitmap_set_dirty_area(self, &a);
 
-    // build the packed word
-    uint32_t word = 0;
-    for (uint8_t i = 0; i < 32 / self->bits_per_value; i++) {
-        word |= (value & self->bitmask) << (32 - ((i + 1) * self->bits_per_value));
-    }
-    // copy it in
-    for (uint32_t i = 0; i < self->stride * self->height; i++) {
-        self->data[i] = word;
+    if (x1 == 0 && y1 == 0 && x2 == self->width && y2 == self->height) {
+        // Fast path for filling the entire bitmap
+        uint32_t word = 0;
+        for (uint8_t i = 0; i < 32 / self->bits_per_value; i++) {
+            word |= (value & self->bitmask) << (32 - ((i + 1) * self->bits_per_value));
+        }
+        // copy it in
+        for (uint32_t i = 0; i < self->stride * self->height; i++) {
+            self->data[i] = word;
+        }
+    } else if (x2 > x1 && y2 > y1) {
+        for (int16_t x = x1; x < x2; x++) {
+            for (int16_t y = y1; y < y2; y++) {
+                displayio_bitmap_write_pixel(self, x, y, value);
+            }
+        }
     }
 }
 

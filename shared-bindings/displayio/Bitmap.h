@@ -46,7 +46,9 @@ void common_hal_displayio_bitmap_blit(
     bool use_skip_index, uint32_t skip_index,
     bool use_write_value, uint32_t write_value);
 uint32_t common_hal_displayio_bitmap_get_pixel(displayio_bitmap_t *bitmap, int16_t x, int16_t y);
-void common_hal_displayio_bitmap_fill(displayio_bitmap_t *bitmap, uint32_t value);
+void common_hal_displayio_bitmap_fill(
+    displayio_bitmap_t *bitmap, uint32_t value,
+    int16_t x1, int16_t y1, int16_t x2, int16_t y2);
 int common_hal_displayio_bitmap_get_buffer(displayio_bitmap_t *self, mp_buffer_info_t *bufinfo, mp_uint_t flags);
 
 #endif // MICROPY_INCLUDED_SHARED_BINDINGS_DISPLAYIO_BITMAP_H
