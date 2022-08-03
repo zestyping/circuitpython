@@ -21,4 +21,6 @@
 #define IGNORE_PIN_PA24     1
 #define IGNORE_PIN_PA25     1
 
+// Customizations for the Climate Clock.
 #define CIRCUITPY_PYSTACK_SIZE 2048
+#define CIRCUITPY_DRIVE_LABEL "CLIMATECLOCK"
