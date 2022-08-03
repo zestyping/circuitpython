@@ -36,6 +36,8 @@
 #include "shared-bindings/util.h"
 #include "supervisor/shared/translate.h"
 
+#define min(a, b) (((a) < (b)) ? (a) : (b))
+
 //| class Bitmap:
 //|     """Stores values of a certain size in a 2D array
 //|
@@ -191,13 +193,10 @@ STATIC mp_obj_t bitmap_subscr(mp_obj_t self_in, mp_obj_t index_obj, mp_obj_t val
 //|         :param int x2: Maximum x-value (exclusive) for rectangular bounding box to be copied from the source bitmap
 //|         :param int y2: Maximum y-value (exclusive) for rectangular bounding box to be copied from the source bitmap
 //|         :param int skip_index: Bitmap palette index in the source that will not be copied;
-//|                                set to None to copy all pixels
-//|         :param int write_value: Value to write into target pixels for all non-zero source
-//|                                pixels; set to None to copy source values"""
-//|         ...
+//|                                set to None to copy all pixels"""
 //|
 STATIC mp_obj_t displayio_bitmap_obj_blit(size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args) {
-    enum {ARG_x, ARG_y, ARG_source, ARG_x1, ARG_y1, ARG_x2, ARG_y2, ARG_skip_index, ARG_write_value};
+    enum {ARG_x, ARG_y, ARG_source, ARG_x1, ARG_y1, ARG_x2, ARG_y2, ARG_skip_index};
     static const mp_arg_t allowed_args[] = {
         {MP_QSTR_x, MP_ARG_REQUIRED | MP_ARG_INT, {.u_obj = MP_OBJ_NULL} },
         {MP_QSTR_y, MP_ARG_REQUIRED | MP_ARG_INT, {.u_obj = MP_OBJ_NULL} },
@@ -206,8 +205,7 @@ STATIC mp_obj_t displayio_bitmap_obj_blit(size_t n_args, const mp_obj_t *pos_arg
         {MP_QSTR_y1, MP_ARG_KW_ONLY | MP_ARG_INT, {.u_int = 0} },
         {MP_QSTR_x2, MP_ARG_KW_ONLY | MP_ARG_OBJ, {.u_obj = mp_const_none} }, // None convert to source->width
         {MP_QSTR_y2, MP_ARG_KW_ONLY | MP_ARG_OBJ, {.u_obj = mp_const_none} }, // None convert to source->height
-        {MP_QSTR_skip_index, MP_ARG_OBJ | MP_ARG_KW_ONLY, {.u_obj = mp_const_none} },
-        {MP_QSTR_write_value, MP_ARG_OBJ | MP_ARG_KW_ONLY, {.u_obj = mp_const_none} },
+        {MP_QSTR_skip_index, MP_ARG_KW_ONLY | MP_ARG_OBJ, {.u_obj = mp_const_none} }
     };
     mp_arg_val_t args[MP_ARRAY_SIZE(allowed_args)];
     mp_arg_parse_all(n_args - 1, pos_args + 1, kw_args, MP_ARRAY_SIZE(allowed_args), allowed_args, args);
@@ -265,33 +263,106 @@ STATIC mp_obj_t displayio_bitmap_obj_blit(size_t n_args, const mp_obj_t *pos_arg
         y1 = temp;
     }
 
-    uint32_t skip_index;
-    bool skip_index_none; // flag whether skip_index was None
+    mp_obj_t skip_obj = args[ARG_skip_index].u_obj;
+    bool use_skip_index = skip_obj != mp_const_none;
+    mp_int_t skip_index = use_skip_index ? mp_obj_get_int(skip_obj) : 0;
 
-    if (args[ARG_skip_index].u_obj == mp_const_none) {
-        skip_index = 0;
-        skip_index_none = true;
-    } else {
-        skip_index = mp_obj_get_int(args[ARG_skip_index].u_obj);
-        skip_index_none = false;
-    }
-
-    uint32_t write_value;
-    bool write_value_none; // flag whether write_value was None
-
-    if (args[ARG_write_value].u_obj == mp_const_none) {
-        write_value = 0;
-        write_value_none = true;
-    } else {
-        write_value = mp_obj_get_int(args[ARG_write_value].u_obj);
-        write_value_none = false;
-    }
-
-    common_hal_displayio_bitmap_blit(self, x, y, source, x1, y1, x2, y2, skip_index, skip_index_none, write_value, write_value_none);
+    common_hal_displayio_bitmap_blit(
+        self, x, y, source, x1, y1, x2, y2, use_skip_index, skip_index, 0, 0);
 
     return mp_const_none;
 }
 MP_DEFINE_CONST_FUN_OBJ_KW(displayio_bitmap_blit_obj, 1, displayio_bitmap_obj_blit);
+
+//|     def freeblit(self, x: int, y: int, source_bitmap: Bitmap, *, x1: int, y1: int, x2: int, y2: int, skip_index: int, multiplier: int) -> None:
+//|         """Copies the rectangle from (x1, y1) to (x2, y2) in source_bitmap
+//|         to a rectangle with its top-left corner at (x, y) in this bitmap.
+//|         Coordinates out of range are allowed; parts of the rectangle that
+//|         land inside this bitmap will be written, and the rest ignored.
+//|         Source pixel values out of range of this bitmap are allowed; any
+//|         upper bits that don't fit will be ignored.
+//|
+//|         :param int x: Left edge of the destination rectangle in this bitmap
+//|         :param int y: Top edge of the destination rectangle in this bitmap
+//|         :param bitmap source_bitmap: Bitmap containing the source rectangle
+//|         :param int x1: Left edge of the source rectangle; defaults to 0
+//|         :param int y1: Top edge of the source rectangle; defaults to 0
+//|         :param int x2: Right edge (exclusive) of the source rectangle
+//|             defaults to the source bitmap width
+//|         :param int y2: Bottom edge (exclusive) of the source rectangle
+//|             defaults to the source bitmap height
+//|         :param int skip_index: If set, pixels with this palette index in
+//|             source_bitmap will not be copied (like a transparent background)
+//|         :param int write_value: If set, all nonzero source pixels will be
+//|             written to the destination as this value
+//|
+STATIC mp_obj_t displayio_bitmap_obj_freeblit(size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args) {
+    enum {ARG_x, ARG_y, ARG_source, ARG_x1, ARG_y1, ARG_x2, ARG_y2, ARG_skip_index, ARG_write_value};
+    static const mp_arg_t allowed_args[] = {
+        {MP_QSTR_x, MP_ARG_REQUIRED | MP_ARG_INT, {.u_obj = MP_OBJ_NULL} },
+        {MP_QSTR_y, MP_ARG_REQUIRED | MP_ARG_INT, {.u_obj = MP_OBJ_NULL} },
+        {MP_QSTR_source_bitmap, MP_ARG_REQUIRED | MP_ARG_OBJ, {.u_obj = MP_OBJ_NULL} },
+        {MP_QSTR_x1, MP_ARG_KW_ONLY | MP_ARG_INT, {.u_int = 0} },
+        {MP_QSTR_y1, MP_ARG_KW_ONLY | MP_ARG_INT, {.u_int = 0} },
+        {MP_QSTR_x2, MP_ARG_KW_ONLY | MP_ARG_OBJ, {.u_obj = mp_const_none} },
+        {MP_QSTR_y2, MP_ARG_KW_ONLY | MP_ARG_OBJ, {.u_obj = mp_const_none} },
+        {MP_QSTR_skip_index, MP_ARG_KW_ONLY | MP_ARG_OBJ, {.u_obj = mp_const_none} },
+        {MP_QSTR_write_value, MP_ARG_KW_ONLY | MP_ARG_OBJ, {.u_obj = mp_const_none} }
+    };
+    mp_arg_val_t args[MP_ARRAY_SIZE(allowed_args)];
+    mp_arg_parse_all(n_args - 1, pos_args + 1, kw_args, MP_ARRAY_SIZE(allowed_args), allowed_args, args);
+
+    displayio_bitmap_t *self = MP_OBJ_TO_PTR(pos_args[0]);
+    displayio_bitmap_t *src = mp_arg_validate_type(args[ARG_source].u_obj, &displayio_bitmap_type, MP_QSTR_source_bitmap);
+
+    int16_t x = args[ARG_x].u_int;
+    int16_t y = args[ARG_y].u_int;
+    int16_t x1 = args[ARG_x1].u_int;
+    int16_t y1 = args[ARG_y1].u_int;
+
+    // Fill in default values for x2 and y2.
+    mp_obj_t x2_obj = args[ARG_x2].u_obj;
+    int16_t x2 = x2_obj == mp_const_none ? src->width : mp_obj_get_int(x2_obj);
+    mp_obj_t y2_obj = args[ARG_y2].u_obj;
+    int16_t y2 = y2_obj == mp_const_none ? src->height : mp_obj_get_int(y2_obj);
+
+    // Clamp the bottom-right corner to the bottom-right of both bitmaps.
+    x2 = min(min(x2, src->width), x1 + self->width - x);
+    y2 = min(min(y2, src->height), y1 + self->height - y);
+
+    // Clamp the top-left corner to the top-left of both bitmaps.
+    int16_t min_x = min(x1, x);
+    if (min_x < 0) {
+        x += -min_x;
+        x1 += -min_x;
+    }
+    int16_t min_y = min(y1, y);
+    if (min_y < 0) {
+        y += -min_y;
+        y1 += -min_y;
+    }
+
+    // Proceed only if the resulting rectangle is non-empty.
+    if (x < self->width && y < self->height &&
+        x1 < x2 && y1 < y2 &&
+        x1 < src->width && y1 < src->height) {
+
+        mp_obj_t skip_obj = args[ARG_skip_index].u_obj;
+        bool use_skip_index = skip_obj != mp_const_none;
+        mp_int_t skip_index = use_skip_index ? mp_obj_get_int(skip_obj) : 0;
+
+        mp_obj_t value_obj = args[ARG_write_value].u_obj;
+        bool use_write_value = value_obj != mp_const_none;
+        mp_int_t write_value = use_write_value ? mp_obj_get_int(value_obj) : 0;
+
+        common_hal_displayio_bitmap_blit(
+            self, x, y, src, x1, y1, x2, y2,
+            use_skip_index, skip_index, use_write_value, write_value);
+    }
+
+    return mp_const_none;
+}
+MP_DEFINE_CONST_FUN_OBJ_KW(displayio_bitmap_freeblit_obj, 1, displayio_bitmap_obj_freeblit);
 
 //|     def fill(self, value: int) -> None:
 //|         """Fills the bitmap with the supplied palette index value."""
@@ -359,6 +430,7 @@ STATIC const mp_rom_map_elem_t displayio_bitmap_locals_dict_table[] = {
     { MP_ROM_QSTR(MP_QSTR_height), MP_ROM_PTR(&displayio_bitmap_height_obj) },
     { MP_ROM_QSTR(MP_QSTR_width), MP_ROM_PTR(&displayio_bitmap_width_obj) },
     { MP_ROM_QSTR(MP_QSTR_blit), MP_ROM_PTR(&displayio_bitmap_blit_obj) },
+    { MP_ROM_QSTR(MP_QSTR_freeblit), MP_ROM_PTR(&displayio_bitmap_freeblit_obj) },
     { MP_ROM_QSTR(MP_QSTR_fill), MP_ROM_PTR(&displayio_bitmap_fill_obj) },
     { MP_ROM_QSTR(MP_QSTR_dirty), MP_ROM_PTR(&displayio_bitmap_dirty_obj) },
 
