@@ -37,6 +37,7 @@
 #include "supervisor/shared/translate.h"
 
 #define min(a, b) (((a) < (b)) ? (a) : (b))
+#define max(a, b) (((a) > (b)) ? (a) : (b))
 
 //| class Bitmap:
 //|     """Stores values of a certain size in a 2D array
@@ -274,95 +275,91 @@ STATIC mp_obj_t displayio_bitmap_obj_blit(size_t n_args, const mp_obj_t *pos_arg
 }
 MP_DEFINE_CONST_FUN_OBJ_KW(displayio_bitmap_blit_obj, 3, displayio_bitmap_obj_blit);
 
-//|     def freeblit(self, x: int, y: int, source_bitmap: Bitmap, *, x1: int, y1: int, x2: int, y2: int, skip_index: int, multiplier: int) -> None:
-//|         """Copies the rectangle from (x1, y1) to (x2, y2) in source_bitmap
-//|         to a rectangle with its top-left corner at (x, y) in this bitmap.
-//|         Coordinates out of range are allowed; parts of the rectangle that
-//|         land inside this bitmap will be written, and the rest ignored.
-//|         Source pixel values out of range of this bitmap are allowed; any
-//|         upper bits that don't fit will be ignored.
+//|     def freeblit(self, x: int, y: int, source: Bitmap, sx: int, sy: int, w: int, h: int, source_bg: int=None, dest_value: int=None) -> None:
+//|         """Copies the rectangle with top-left corner (sx, sy) and size
+//|         (w, h) in a source bitmap to a rectangle with its top-left corner
+//|         at (x, y) in this bitmap.  Coordinates out of range are allowed;
+//|         (sx + i, sy + j) will be copied to (x + i, y + j) for any (i, j)
+//|         that makes those coordinates in range, and the rest will be ignored
+//|         without complaint.  Source pixel values beyond this bitmap's
+//|         palette are allowed; any upper bits that don't fit will be ignored.
 //|
 //|         :param int x: Left edge of the destination rectangle in this bitmap
 //|         :param int y: Top edge of the destination rectangle in this bitmap
-//|         :param bitmap source_bitmap: Bitmap containing the source rectangle
-//|         :param int x1: Left edge of the source rectangle; defaults to 0
-//|         :param int y1: Top edge of the source rectangle; defaults to 0
-//|         :param int x2: Right edge (exclusive) of the source rectangle
-//|             defaults to the source bitmap width
-//|         :param int y2: Bottom edge (exclusive) of the source rectangle
-//|             defaults to the source bitmap height
-//|         :param int skip_index: If set, pixels with this palette index in
-//|             source_bitmap will not be copied (like a transparent background)
-//|         :param int write_value: If set, all nonzero source pixels will be
+//|         :param bitmap source: Bitmap containing the source rectangle
+//|         :param int sx: Left edge of the source rectangle; defaults to 0
+//|         :param int sy: Top edge of the source rectangle; defaults to 0
+//|         :param int w: Width of the rectangle; defaults to source.width
+//|         :param int h: Height of the rectangle; defaults to source.height
+//|         :param int source_bg: If set, pixels with this value in the source
+//|             will not be copied (like a transparent background)
+//|         :param int dest_value: If set, all nonzero source pixels will be
 //|             written to the destination as this value
 //|
 STATIC mp_obj_t displayio_bitmap_obj_freeblit(size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args) {
-    enum {ARG_x, ARG_y, ARG_source, ARG_x1, ARG_y1, ARG_x2, ARG_y2, ARG_skip_index, ARG_write_value};
+    enum {ARG_x, ARG_y, ARG_source, ARG_sx, ARG_sy, ARG_w, ARG_h, ARG_source_bg, ARG_dest_value};
     static const mp_arg_t allowed_args[] = {
         {MP_QSTR_x, MP_ARG_REQUIRED | MP_ARG_INT, {.u_obj = MP_OBJ_NULL} },
         {MP_QSTR_y, MP_ARG_REQUIRED | MP_ARG_INT, {.u_obj = MP_OBJ_NULL} },
-        {MP_QSTR_source_bitmap, MP_ARG_REQUIRED | MP_ARG_OBJ, {.u_obj = MP_OBJ_NULL} },
-        {MP_QSTR_x1, MP_ARG_KW_ONLY | MP_ARG_INT, {.u_int = 0} },
-        {MP_QSTR_y1, MP_ARG_KW_ONLY | MP_ARG_INT, {.u_int = 0} },
-        {MP_QSTR_x2, MP_ARG_KW_ONLY | MP_ARG_OBJ, {.u_obj = mp_const_none} },
-        {MP_QSTR_y2, MP_ARG_KW_ONLY | MP_ARG_OBJ, {.u_obj = mp_const_none} },
-        {MP_QSTR_skip_index, MP_ARG_KW_ONLY | MP_ARG_OBJ, {.u_obj = mp_const_none} },
-        {MP_QSTR_write_value, MP_ARG_KW_ONLY | MP_ARG_OBJ, {.u_obj = mp_const_none} }
+        {MP_QSTR_source, MP_ARG_REQUIRED | MP_ARG_OBJ, {.u_obj = MP_OBJ_NULL} },
+        {MP_QSTR_sx, MP_ARG_INT, {.u_int = 0} },
+        {MP_QSTR_sy, MP_ARG_INT, {.u_int = 0} },
+        {MP_QSTR_w, MP_ARG_OBJ, {.u_obj = mp_const_none} },
+        {MP_QSTR_h, MP_ARG_OBJ, {.u_obj = mp_const_none} },
+        {MP_QSTR_source_bg, MP_ARG_OBJ, {.u_obj = mp_const_none} },
+        {MP_QSTR_dest_value, MP_ARG_OBJ, {.u_obj = mp_const_none} }
     };
     mp_arg_val_t args[MP_ARRAY_SIZE(allowed_args)];
     mp_arg_parse_all(n_args - 1, pos_args + 1, kw_args, MP_ARRAY_SIZE(allowed_args), allowed_args, args);
 
     displayio_bitmap_t *self = MP_OBJ_TO_PTR(pos_args[0]);
-    displayio_bitmap_t *src = mp_arg_validate_type(args[ARG_source].u_obj, &displayio_bitmap_type, MP_QSTR_source_bitmap);
+    displayio_bitmap_t *src = mp_arg_validate_type(args[ARG_source].u_obj, &displayio_bitmap_type, MP_QSTR_source);
 
     int16_t x = args[ARG_x].u_int;
     int16_t y = args[ARG_y].u_int;
-    int16_t x1 = args[ARG_x1].u_int;
-    int16_t y1 = args[ARG_y1].u_int;
+    int16_t sl = args[ARG_sx].u_int;
+    int16_t st = args[ARG_sy].u_int;
 
-    // Fill in default values for x2 and y2.
-    mp_obj_t x2_obj = args[ARG_x2].u_obj;
-    int16_t x2 = x2_obj == mp_const_none ? src->width : mp_obj_get_int(x2_obj);
-    mp_obj_t y2_obj = args[ARG_y2].u_obj;
-    int16_t y2 = y2_obj == mp_const_none ? src->height : mp_obj_get_int(y2_obj);
+    // Fill in default values for w and h.
+    mp_obj_t w_obj = args[ARG_w].u_obj;
+    int16_t w = w_obj == mp_const_none ? src->width : mp_obj_get_int(w_obj);
+    mp_obj_t h_obj = args[ARG_h].u_obj;
+    int16_t h = h_obj == mp_const_none ? src->height : mp_obj_get_int(h_obj);
 
     // Clamp the bottom-right corner to the bottom-right of both bitmaps.
-    x2 = min(min(x2, src->width), x1 + self->width - x);
-    y2 = min(min(y2, src->height), y1 + self->height - y);
+    int16_t sr = min(min(sl + w, src->width), sl + self->width - x);
+    int16_t sb = min(min(st + h, src->height), st + self->height - y);
 
     // Clamp the top-left corner to the top-left of both bitmaps.
-    int16_t min_x = min(x1, x);
+    int16_t min_x = min(sl, x);
     if (min_x < 0) {
         x += -min_x;
-        x1 += -min_x;
+        sl += -min_x;
     }
-    int16_t min_y = min(y1, y);
+    int16_t min_y = min(st, y);
     if (min_y < 0) {
         y += -min_y;
-        y1 += -min_y;
+        st += -min_y;
     }
 
     // Proceed only if the resulting rectangle is non-empty.
-    if (x < self->width && y < self->height &&
-        x1 < x2 && y1 < y2 &&
-        x1 < src->width && y1 < src->height) {
+    if (x < self->width && y < self->height && sl < sr && st < sb) {
+        mp_obj_t source_bg_obj = args[ARG_source_bg].u_obj;
+        bool use_source_bg = source_bg_obj != mp_const_none;
+        mp_int_t source_bg = use_source_bg ? mp_obj_get_int(source_bg_obj) : 0;
 
-        mp_obj_t skip_obj = args[ARG_skip_index].u_obj;
-        bool use_skip_index = skip_obj != mp_const_none;
-        mp_int_t skip_index = use_skip_index ? mp_obj_get_int(skip_obj) : 0;
-
-        mp_obj_t value_obj = args[ARG_write_value].u_obj;
-        bool use_write_value = value_obj != mp_const_none;
-        mp_int_t write_value = use_write_value ? mp_obj_get_int(value_obj) : 0;
+        mp_obj_t dest_value_obj = args[ARG_dest_value].u_obj;
+        bool use_dest_value = dest_value_obj != mp_const_none;
+        mp_int_t dest_value = use_dest_value ? mp_obj_get_int(dest_value_obj) : 0;
 
         common_hal_displayio_bitmap_blit(
-            self, x, y, src, x1, y1, x2, y2,
-            use_skip_index, skip_index, use_write_value, write_value);
+            self, x, y, src, sl, st, sr, sb,
+            use_source_bg, source_bg, use_dest_value, dest_value);
     }
 
     return mp_const_none;
 }
-MP_DEFINE_CONST_FUN_OBJ_KW(displayio_bitmap_freeblit_obj, 1, displayio_bitmap_obj_freeblit);
+MP_DEFINE_CONST_FUN_OBJ_KW(displayio_bitmap_freeblit_obj, 3, displayio_bitmap_obj_freeblit);
 
 //|     def fill(self, value: int, x1: int, y1: int, x2: int, y2: int) -> None:
 //|         """Fills a rectangle of the bitmap with a palette index value.
@@ -382,14 +379,16 @@ STATIC mp_obj_t displayio_bitmap_obj_fill(size_t n_args, const mp_obj_t *pos_arg
     mp_arg_parse_all(n_args - 1, pos_args + 1, kw_args, MP_ARRAY_SIZE(allowed_args), allowed_args, args);
 
     mp_uint_t value = (mp_uint_t) args[ARG_value].u_int;
-    int16_t x1 = args[ARG_x1].u_int;
-    int16_t y1 = args[ARG_y1].u_int;
+    int16_t x1 = min(max(args[ARG_x1].u_int, 0), self->width);
+    int16_t y1 = min(max(args[ARG_y1].u_int, 0), self->height);
 
     // Fill in default values for x2 and y2.
     mp_obj_t x2_obj = args[ARG_x2].u_obj;
     int16_t x2 = x2_obj == mp_const_none ? self->width : mp_obj_get_int(x2_obj);
     mp_obj_t y2_obj = args[ARG_y2].u_obj;
     int16_t y2 = y2_obj == mp_const_none ? self->height : mp_obj_get_int(y2_obj);
+    x2 = min(max(x2, x1), self->width);
+    y2 = min(max(y2, y1), self->height);
 
     common_hal_displayio_bitmap_fill(self, value, x1, y1, x2, y2);
     return mp_const_none;

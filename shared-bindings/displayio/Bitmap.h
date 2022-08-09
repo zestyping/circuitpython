@@ -44,7 +44,7 @@ void common_hal_displayio_bitmap_blit(
     displayio_bitmap_t *self, int16_t x, int16_t y, displayio_bitmap_t *source,
     int16_t x1, int16_t y1, int16_t x2, int16_t y2,
     bool use_skip_index, uint32_t skip_index,
-    bool use_write_value, uint32_t write_value);
+    bool use_dest_value, uint32_t dest_value);
 uint32_t common_hal_displayio_bitmap_get_pixel(displayio_bitmap_t *bitmap, int16_t x, int16_t y);
 void common_hal_displayio_bitmap_fill(
     displayio_bitmap_t *bitmap, uint32_t value,
