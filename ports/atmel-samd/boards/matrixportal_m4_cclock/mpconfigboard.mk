@@ -10,23 +10,10 @@ QSPI_FLASH_FILESYSTEM = 1
 EXTERNAL_FLASH_DEVICES = "S25FL116K, S25FL216K, GD25Q16C"
 LONGINT_IMPL = MPZ
 
-CIRCUITPY_AESIO = 0
-CIRCUITPY_ONEWIREIO = 0
-CIRCUITPY_PARALLELDISPLAY = 0
-CIRCUITPY_SDCARDIO = 0
-CIRCUITPY_SHARPDISPLAY = 0
-CIRCUITPY_TRACEBACK = 1
-CIRCUITPY_ZLIB = 1
-
-# Include these Python libraries in firmware.
-FROZEN_MPY_DIRS += $(TOP)/frozen/Adafruit_CircuitPython_Requests
-FROZEN_MPY_DIRS += $(TOP)/frozen/Adafruit_CircuitPython_ESP32SPI
-FROZEN_MPY_DIRS += $(TOP)/frozen/Adafruit_CircuitPython_NeoPixel
-
-
-# Remove more libraries we don't need
+# Remove libraries we don't need.
 # See https://circuitpython.org/board/matrixportal_m4/ for a list of included modules
 # See py/circuitpy_defns.mk for their equivalent #defines
+CIRCUITPY_AESIO = 0
 CIRCUITPY_ALARM = 0
 CIRCUITPY_ATEXIT = 0
 CIRCUITPY_AUDIOBUSIO = 0
@@ -46,20 +33,29 @@ CIRCUITPY_GIFIO = 0
 CIRCUITPY_KEYPAD = 0
 CIRCUITPY_MSGPACK = 0
 CIRCUITPY_NVM = 0
+CIRCUITPY_ONEWIREIO = 0
+CIRCUITPY_PARALLELDISPLAY = 0
 CIRCUITPY_PS2IO = 0
 CIRCUITPY_PULSEIO = 0
 CIRCUITPY_RANDOM = 0
+CIRCUITPY_SDCARDIO = 0
+CIRCUITPY_SHARPDISPLAY = 0
 CIRCUITPY_SYNTHIO = 0
 CIRCUITPY_TOUCHIO = 0
 CIRCUITPY_USB_HID = 0
 CIRCUITPY_USB_MIDI = 0
 CIRCUITPY_VECTORIO = 0
 
-# Add libraries we do want
+# Include these modules and libraries in firmware.
+CIRCUITPY_TRACEBACK = 1
+CIRCUITPY_ZLIB = 1
 FROZEN_MPY_DIRS += $(TOP)/frozen/Adafruit_CircuitPython_Bitmap_Font
 FROZEN_MPY_DIRS += $(TOP)/frozen/Adafruit_CircuitPython_datetime
 FROZEN_MPY_DIRS += $(TOP)/frozen/Adafruit_CircuitPython_Display_Text
 FROZEN_MPY_DIRS += $(TOP)/frozen/Adafruit_CircuitPython_DS3231
+FROZEN_MPY_DIRS += $(TOP)/frozen/Adafruit_CircuitPython_ESP32SPI
 FROZEN_MPY_DIRS += $(TOP)/frozen/Adafruit_CircuitPython_Hashlib
 FROZEN_MPY_DIRS += $(TOP)/frozen/Adafruit_CircuitPython_MatrixPortal
+FROZEN_MPY_DIRS += $(TOP)/frozen/Adafruit_CircuitPython_NeoPixel
 FROZEN_MPY_DIRS += $(TOP)/frozen/Adafruit_CircuitPython_Register
+FROZEN_MPY_DIRS += $(TOP)/frozen/Adafruit_CircuitPython_Requests

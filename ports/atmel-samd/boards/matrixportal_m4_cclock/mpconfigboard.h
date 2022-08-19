@@ -23,4 +23,8 @@
 
 // Customizations for the Climate Clock.
 #define CIRCUITPY_PYSTACK_SIZE 2048
-#define CIRCUITPY_DRIVE_LABEL "CLIMATECLOCK"
+
+// Enable micropython.mem_info().
+#undef MICROPY_PY_MICROPYTHON_MEM_INFO
+#define MICROPY_PY_MICROPYTHON_MEM_INFO 1
+
