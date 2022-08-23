@@ -300,7 +300,8 @@ void common_hal_bleio_packet_buffer_construct(
     size_t incoming_buffer_size = 0;
     uint32_t *incoming_buffer = NULL;
     if (incoming) {
-        incoming_buffer_size = buffer_size * (sizeof(uint16_t) + max_packet_size);
+        // + 1 needed by ringbuf for empty/full detection.
+        incoming_buffer_size = buffer_size * (sizeof(uint16_t) + max_packet_size) + 1;
         incoming_buffer = m_malloc(incoming_buffer_size, false);
     }
 
