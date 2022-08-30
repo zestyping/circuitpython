@@ -310,3 +310,15 @@
 [submodule "ports/espressif/esp32-camera"]
 	path = ports/espressif/esp32-camera
 	url = https://github.com/adafruit/esp32-camera/
+[submodule "frozen/Adafruit_CircuitPython_Bitmap_Font"]
+	path = frozen/Adafruit_CircuitPython_Bitmap_Font
+	url = https://github.com/adafruit/Adafruit_CircuitPython_Bitmap_Font
+[submodule "frozen/Adafruit_CircuitPython_Hashlib"]
+	path = frozen/Adafruit_CircuitPython_Hashlib
+	url = https://github.com/adafruit/Adafruit_CircuitPython_Hashlib
+[submodule "frozen/Adafruit_CircuitPython_MatrixPortal"]
+	path = frozen/Adafruit_CircuitPython_MatrixPortal
+	url = https://github.com/adafruit/Adafruit_CircuitPython_MatrixPortal
+[submodule "frozen/Adafruit_CircuitPython_datetime"]
+	path = frozen/Adafruit_CircuitPython_datetime
+	url = https://github.com/adafruit/Adafruit_CircuitPython_datetime
