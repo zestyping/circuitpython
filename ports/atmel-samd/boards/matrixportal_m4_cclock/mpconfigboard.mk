@@ -52,10 +52,6 @@ CIRCUITPY_VECTORIO = 0
 # Include these modules and libraries in firmware.
 CIRCUITPY_TRACEBACK = 1
 CIRCUITPY_ZLIB = 1
-FROZEN_MPY_DIRS += $(TOP)/frozen/Adafruit_CircuitPython_Bitmap_Font
-FROZEN_MPY_DIRS += $(TOP)/frozen/Adafruit_CircuitPython_datetime
-FROZEN_MPY_DIRS += $(TOP)/frozen/Adafruit_CircuitPython_Display_Text
-FROZEN_MPY_DIRS += $(TOP)/frozen/Adafruit_CircuitPython_DS3231
 FROZEN_MPY_DIRS += $(TOP)/frozen/Adafruit_CircuitPython_ESP32SPI
 FROZEN_MPY_DIRS += $(TOP)/frozen/Adafruit_CircuitPython_Hashlib
 FROZEN_MPY_DIRS += $(TOP)/frozen/Adafruit_CircuitPython_MatrixPortal
