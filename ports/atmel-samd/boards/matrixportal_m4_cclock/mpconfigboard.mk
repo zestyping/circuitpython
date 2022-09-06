@@ -50,6 +50,7 @@ CIRCUITPY_USB_MIDI = 0
 CIRCUITPY_VECTORIO = 0
 
 # Include these modules and libraries in firmware.
+CIRCUITPY_MD5 = 1
 CIRCUITPY_TRACEBACK = 1
 CIRCUITPY_ZLIB = 1
 FROZEN_MPY_DIRS += $(TOP)/frozen/Adafruit_CircuitPython_ESP32SPI

@@ -369,6 +369,9 @@ endif
 ifeq ($(CIRCUITPY_MSGPACK),1)
 SRC_PATTERNS += msgpack/%
 endif
+ifeq ($(CIRCUITPY_MD5),1)
+SRC_PATTERNS += md5/%
+endif
 
 # All possible sources are listed here, and are filtered by SRC_PATTERNS in SRC_COMMON_HAL
 SRC_COMMON_HAL_ALL = \
@@ -502,6 +505,8 @@ $(filter $(SRC_PATTERNS), \
 	fontio/Glyph.c \
 	imagecapture/ParallelImageCapture.c \
 	math/__init__.c \
+	md5/__init__.c \
+	md5/md5.c \
 	microcontroller/ResetReason.c \
 	microcontroller/RunMode.c \
 	msgpack/__init__.c \
@@ -588,6 +593,8 @@ SRC_SHARED_MODULE_ALL = \
 	keypad/KeyMatrix.c \
 	keypad/ShiftRegisterKeys.c \
 	keypad/Keys.c \
+	md5/__init__.c \
+	md5/md5.c \
 	memorymonitor/__init__.c \
 	memorymonitor/AllocationAlarm.c \
 	memorymonitor/AllocationSize.c \
