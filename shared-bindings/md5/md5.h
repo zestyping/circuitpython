@@ -6,5 +6,5 @@
 
 extern const mp_obj_type_t md5_md5_type;
 
-void shared_module_md5_md5_construct(md5_md5_obj_t *self);
+void shared_module_md5_md5_init(md5_md5_obj_t *self);
 void shared_module_md5_md5_update(md5_md5_obj_t *self, uint8_t *data, uint32_t len);
